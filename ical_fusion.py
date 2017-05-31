@@ -10,7 +10,7 @@ from icalendar import Calendar
 from tkinter import Tk, filedialog, Listbox, Button, Entry, StringVar, \
     LabelFrame, BooleanVar, Frame, ttk, END, Checkbutton, messagebox
 
-ical_fields = ('SUMMARY', 'UID', 'LOCATION', 'CATEGORIES')
+ical_fields = ('SUMMARY', 'UID', 'LOCATION', 'CATEGORIES', 'DTSTART', 'DTEND')
 
 
 class GUI:
@@ -31,13 +31,14 @@ class GUI:
         filter_frame = LabelFrame(self.root, text='Filter')
         self.filter_type = ttk.Combobox(filter_frame, values=ical_fields)
         self.filter_type.current(0)
+        self.filter_type.bind("<<ComboboxSelected>>", self.update_filter_cond)
         self.filter_type.state(('!disabled', 'readonly'))
         self.filter_type.grid(row=0)
 
         self.filter_cond = ttk.Combobox(filter_frame,
-                                        values=('EQUAL TO',
-                                                'CONTAINS'))
-        self.filter_cond.current(1)
+                                        values=('CONTAINS',
+                                                'EQUAL TO'))
+        self.filter_cond.current(0)
         self.filter_cond.state(('!disabled', 'readonly'))
         self.filter_cond.grid(row=0, column=1)
 
@@ -49,6 +50,20 @@ class GUI:
                                   bg='white')
         self.filter_entry.grid(row=0, column=2)
         filter_frame.pack(fill='x', side='top')
+
+    def update_filter_cond(self, *args):
+        """ Update filter conditions on filter type selection.
+        """
+
+        if self.filter_type.get() in ('DTSTART', 'DTEND'):
+            self.filter_cond['values'] = ('BEFORE', 'AFTER', 'EQUAL TO')
+
+        else:
+            self.filter_cond['values'] = ('CONTAINS', 'EQUAL TO')
+
+        self.filter_cond.current(0)
+
+
 
     def create_files_list_frame(self):
         files_list_frame = LabelFrame(self.root, text='Files to merge')
