@@ -6,10 +6,14 @@
 #
 # Distributed under terms of the MIT license.
 
+import datetime
 from icalendar import Calendar
+from pytz import timezone
+from dateutil.parser import parse
 from tkinter import Tk, filedialog, Listbox, Button, Entry, StringVar, \
     LabelFrame, BooleanVar, Frame, ttk, END, Checkbutton, messagebox
 
+local_timezone = timezone('Europe/Paris')
 ical_fields = ('SUMMARY', 'UID', 'LOCATION', 'CATEGORIES', 'DTSTART', 'DTEND')
 
 
@@ -56,14 +60,12 @@ class GUI:
         """
 
         if self.filter_type.get() in ('DTSTART', 'DTEND'):
-            self.filter_cond['values'] = ('BEFORE', 'AFTER', 'EQUAL TO')
+            self.filter_cond['values'] = ('BEFORE', 'AFTER')
 
         else:
             self.filter_cond['values'] = ('CONTAINS', 'EQUAL TO')
 
         self.filter_cond.current(0)
-
-
 
     def create_files_list_frame(self):
         files_list_frame = LabelFrame(self.root, text='Files to merge')
@@ -99,16 +101,45 @@ class GUI:
             self.FilesList.insert(END, file)
 
     def filter(self, event):
+        """Check if condition is met for a given event field"""
+
         value = self.filter_value.get()
         field = self.filter_type.get()
-        if self.filter_cond.get() == 'CONTAINS':
+        condition = self.filter_cond.get()
+
+        if field in ('DTSTART', 'DTEND'):
+            try:
+                value = parse(value)
+            except ValueError:
+                messagebox.showerror('Wrong value',
+                                     'Value is not recognized as a date')
+            value = self.normalize_date(value)
+
+        if condition == 'CONTAINS':
             if value in event.get(field):
                 return True
-        if self.filter_cond.get() == 'EQUAL TO':
+        if condition == 'EQUAL TO':
             if value == event.get(field):
+                return True
+        if condition == 'BEFORE':
+            if value > self.normalize_date(event.get(field).dt):
+                return True
+        if condition == 'AFTER':
+            if value < self.normalize_date(event.get(field).dt):
                 return True
 
         return False
+
+    def normalize_date(self, date):
+        """Ensure that date is a datetime object and is offset aware."""
+
+        if not isinstance(date, datetime.datetime):
+            date = datetime.datetime(date.year, date.month, date.day)
+
+        if date.tzinfo is None or date.tzinfo.utcoffset(date) is None:
+            date = local_timezone.localize(date)
+
+        return date
 
     def join_files(self):
         if self.FilesList.get(0, END):
