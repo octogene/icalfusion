@@ -10,8 +10,8 @@ This software allows to merge multiple ical files into one.
 
 ### Todo
 
+- More conditions for date filtering
 - Multiple filters
-- Date filtering
 - Command-line interface
 
 ## Requirements
